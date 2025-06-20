@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Test_MindeeApi.Service;
 using Test_MindeeApi.State;
@@ -17,12 +16,13 @@ public class MessageHandler : IMessageHandler
     private readonly ITelegramBotClient _bot;
     private readonly IPolicyGenerationService _policyGenerationService;
     private readonly SessionStorage _sessions;
-
-    public MessageHandler(ITelegramBotClient bot, IPolicyGenerationService policyGenerationService, SessionStorage sessions)
+    private readonly IOpenAiService _openAiService;
+    public MessageHandler(ITelegramBotClient bot,IOpenAiService openAiService ,IPolicyGenerationService policyGenerationService, SessionStorage sessions)
     {
         _bot = bot;
         _sessions = sessions;
         _policyGenerationService = policyGenerationService; 
+        _openAiService = openAiService;
     }
 
     public async Task HandleAsync(Message message, CancellationToken token)
@@ -48,6 +48,7 @@ public class MessageHandler : IMessageHandler
 
                 await using var fs = File.OpenRead(tempFilePath);
                 await _bot.SendDocument(chatId, new InputFileStream(fs, "policy.txt"), "✅ Ось ваш страховий поліс", cancellationToken: token);
+                await _bot.SendMessage(chatId, "✅ Готово! Якщо у вас виникнуть додаткові питання — просто напишіть. Гарного дня! 🌞", cancellationToken: token);
                 break;
             }
 
@@ -57,9 +58,14 @@ public class MessageHandler : IMessageHandler
                 break;
 
             default:
-                if (session.State != ConversationState.WaitingForDataConfirmation)
+                if (!string.IsNullOrEmpty(text))
                 {
-                    await _bot.SendMessage(chatId, "Введіть /start , або надсилайте фото паспорта.",  cancellationToken: token);
+                    var aiReply = await _openAiService.GetChatCompletionAsync(text, token);
+                    await _bot.SendMessage(chatId, aiReply, cancellationToken: token);
+                }
+                else
+                {
+                    await _bot.SendMessage(chatId, "Надішліть текст або фото документа 🧾", cancellationToken: token);
                 }
                 break;
         }

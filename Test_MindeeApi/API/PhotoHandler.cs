@@ -15,12 +15,14 @@ public class PhotoHandler : IPhotoHandler
     private readonly ITelegramBotClient _bot;
     private readonly SessionStorage _sessions;
     private readonly DocumentProcessingService _docs;
+    private readonly IOpenAiService _openAiService;
 
-    public PhotoHandler(ITelegramBotClient bot, SessionStorage sessions, DocumentProcessingService docs)
+    public PhotoHandler(ITelegramBotClient bot, SessionStorage sessions, DocumentProcessingService docs, IOpenAiService openAiService)
     {
         _bot = bot;
         _sessions = sessions;
         _docs = docs;
+        _openAiService = openAiService;
     }
 
     public async Task HandleAsync(Message message, CancellationToken token)
@@ -64,11 +66,17 @@ public class PhotoHandler : IPhotoHandler
             {
                 await HandleConfirmationAsync(session, text, chatId, token);
             }
+            else if (!string.IsNullOrEmpty(text))
+            {
+                var aiReply = await _openAiService.GetChatCompletionAsync(text, token);
+                await _bot.SendMessage(chatId, aiReply, cancellationToken: token);
+            }
             else
             {
                 await _bot.SendMessage(chatId, "Очікую на фото паспорта або техпаспорта.", cancellationToken: token);
             }
         }
+
     }
 
     private async Task HandlePassportFrontAsync(UserSession session, string fileId, long chatId, CancellationToken token)
@@ -76,6 +84,7 @@ public class PhotoHandler : IPhotoHandler
         session.PassportFrontFileId = fileId;
         session.State = ConversationState.WaitingForPassportBack;
         await _bot.SendMessage(chatId, "✅ Передня сторона паспорта отримана. Надішліть задню сторону.", cancellationToken: token);
+        
     }
 
     private async Task HandlePassportBackAsync(UserSession session, Stream backStream, long chatId, CancellationToken token)
@@ -83,6 +92,8 @@ public class PhotoHandler : IPhotoHandler
         session.PassportBackFileId = "[in-memory]";
 
         var front = await GetFileStream(session.PassportFrontFileId, token);
+        
+        await _bot.SendMessage(chatId, "📄 Документи отримано. Виконуємо розпізнавання, зачекайте кілька секунд...", cancellationToken: token);
         var result = await _docs.ProcessDriverLicenseFromFrontAndBackAsync(front, backStream);
         session.Passport = result;
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Telegram.Bot;
@@ -7,6 +6,7 @@ using Test_MindeeApi.API;
 using Test_MindeeApi.Service;
 using Test_MindeeApi.State;
 using ILogger = Serilog.ILogger;
+
 
 namespace Test_MindeeApi.Configuration
 {
@@ -39,7 +39,8 @@ namespace Test_MindeeApi.Configuration
                     if (string.IsNullOrEmpty(botToken))
                     {
                         throw new ArgumentException("Bot token is missing in configuration.");
-                    }
+                    }              
+                    services.AddHttpClient<IOpenAiService, OpenAiService>();
 
                     services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
                     services.AddSingleton<TelegramBotService>();
@@ -56,7 +57,6 @@ namespace Test_MindeeApi.Configuration
                     services.AddScoped(typeof(IPhotoHandler), typeof(PhotoHandler));
                     
                     services.AddScoped(typeof(IPolicyGenerationService), typeof(PolicyGenerationService));
-
                     
                 })
                 .UseConsoleLifetime();
