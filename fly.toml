@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for private-test-mindee-api on 2025-06-20T09:26:34Z
+# fly.toml app configuration file generated for private-test-mindee-api-nlt29a on 2025-06-20T09:35:07Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'private-test-mindee-api'
+app = 'private-test-mindee-api-nlt29a'
 primary_region = 'otp'
 
 [build]
