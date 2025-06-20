@@ -105,6 +105,8 @@ public class PhotoHandler : IPhotoHandler
 
     private async Task HandleVehicleDocAsync(UserSession session, Stream photoStream, long chatId, CancellationToken token)
     {
+        
+        await _bot.SendMessage(chatId, "📄 Техпаспорт отримано. Виконуємо розпізнавання, зачекайте кілька секунд...", cancellationToken: token);
         var techPassport = await _docs.ProcessTechPassportFromImageAsync(photoStream);
         session.TechPassport = techPassport;
 

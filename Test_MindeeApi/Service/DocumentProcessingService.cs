@@ -20,7 +20,7 @@ public class DocumentProcessingService
     }
 
    
-    private async Task<PassportData> RecognizeDriverLicenseAsync(Stream imageStream, string fileName)
+    private async Task<PassportData> RecognizePassportAsync(Stream imageStream, string fileName)
     {
         var tempFile = Path.Combine(Path.GetTempPath(), fileName);
         using (var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
@@ -74,8 +74,8 @@ public class DocumentProcessingService
 
     public async Task<string> ProcessDriverLicenseFromFrontAndBackAsync(Stream frontStream, Stream backStream)
     {
-        var frontData = await RecognizeDriverLicenseAsync(frontStream, "front.jpg");
-        var backData = await RecognizeDriverLicenseAsync(backStream, "back.jpg");
+        var frontData = await RecognizePassportAsync(frontStream, "front.jpg");
+        var backData = await RecognizePassportAsync(backStream, "back.jpg");
 
         var merged = MergeDriverLicenseData(frontData, backData);
         SplitMrzLines(merged);
@@ -91,8 +91,8 @@ public class DocumentProcessingService
         var input = new LocalInputSource(tempFile);
 
         var endpoint = new CustomEndpoint(
-            endpointName: "techpasport2",
-            accountName: "DeveloperVedmedik2",
+            endpointName: "techpasport",
+            accountName: "DeveloperVedmedik3",
             version: "1");
 
         var response = await _client.EnqueueAndParseAsync<GeneratedV1>(input, endpoint);
@@ -103,16 +103,16 @@ public class DocumentProcessingService
             return "❌ Не вдалося розпізнати документ";
 
         prediction.Fields.TryGetValue("vehicle_identification_number", out var vinField);
-        prediction.Fields.TryGetValue("manufacturer", out var manufacturerField);
-        prediction.Fields.TryGetValue("data_of_first_registration", out var registrationField);
-        prediction.Fields.TryGetValue("engine_type", out var engineTypeField);
+        prediction.Fields.TryGetValue("brand", out var brandField);
+        prediction.Fields.TryGetValue("model", out var modelField);
+        prediction.Fields.TryGetValue("color", out var colorField);
 
         var vin = CleanValue(vinField?.ToString());
-        var manufacturer = CleanValue(manufacturerField?.ToString());
-        var registrationDate = CleanValue(registrationField?.ToString());
-        var engineType = CleanValue(engineTypeField?.ToString());
+        var brand = CleanValue(brandField?.ToString());
+        var model = CleanValue(modelField?.ToString());
+        var color = CleanValue(colorField?.ToString());
 
-        return FormatTechPassportData(vin, manufacturer, registrationDate, engineType);
+        return FormatTechPassportData(vin, brand, model, color);
     }
     private string FormatPassportData(PassportData data)
     {
@@ -139,14 +139,14 @@ public class DocumentProcessingService
     }
     private string CleanValue(string? raw) => raw?.Replace(":value:", "", StringComparison.OrdinalIgnoreCase).Trim() ?? "—";
 
-    private string FormatTechPassportData(string vin, string manufacturer, string registrationDate, string engineType)
+    private string FormatTechPassportData(string vin, string brand, string model, string color)
     {
         var sb = new StringBuilder();
         sb.AppendLine("🚗 *ДАНІ АВТОМОБІЛЯ*");
         sb.AppendLine($"🚗 VIN: {vin}");
-        sb.AppendLine($"🏭 Виробник: {manufacturer}");
-        sb.AppendLine($"📅 Перша реєстрація: {registrationDate}");
-        sb.AppendLine($"🛠 Тип двигуна: {engineType}");
+        sb.AppendLine($"🏭 Бренд: {brand}");
+        sb.AppendLine($"📅  Модель: {model}");
+        sb.AppendLine($"🛠 Колір: {color}");
         return sb.ToString();
     }
     
