@@ -23,10 +23,5 @@
       <PackageReference Include="Telegram" Version="1.0.1" />
       <PackageReference Include="Telegram.Bot" Version="22.5.2-dev.6" />
     </ItemGroup>
-    <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-    </ItemGroup>
 
 </Project>
